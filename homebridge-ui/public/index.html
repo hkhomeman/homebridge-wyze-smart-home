@@ -1,0 +1,117 @@
+<div class="card card-body">
+  <form id="configForm">
+    <h3>Welcome to Wyze Smart Home Plugin</h3>
+    <h5>To get this plugin to work, You'll need your <b>username</b> and <b>password</b> to Authenticate to Wyze Servers:</h5>
+    <div class="form-group">
+      <label for="userNameInput">Username</label>
+      <input type="text" class="form-control" id="userNameInput" required>
+    </div>
+    <div class="form-group">
+      <label for="passwordInput">Password</label>
+      <input type="text" class="form-control" id="passwordInput" required>
+    </div>
+    <div class="form-group">
+      <label for="mfaCodeInput">MFA Code</label>
+      <input type="text" class="form-control" id="mfaCodeInput">
+    </div>
+    <div class="text-center">
+      <button id="loginButton" type="button" class="btn btn-primary">Login</button>
+    </div>
+  </form>
+</div>
+
+<script>
+  (async () => {
+    // get the initial config - this is an array potentially containing multiple config blocks
+    const pluginConfig = await homebridge.getPluginConfig();
+
+    // get the intial from the config and add it to the form
+    if (pluginConfig.length) {
+      document.querySelector('#userNameInput').value = pluginConfig[0].username;
+      document.querySelector('#passwordInput').value = pluginConfig[0].password;
+      document.querySelector('#mfaCodeInput').value = pluginConfig[0].mfaCode;
+    } else {
+      pluginConfig.push({});
+    }
+
+    // watch for changes to the form and update the config
+    document.getElementById('configForm').addEventListener('input', () => {
+      // get the current values from the form
+      pluginConfig[0].username = document.querySelector('#userNameInput').value;
+      pluginConfig[0].password = document.querySelector('#passwordInput').value;
+      pluginConfig[0].mfaCode = document.querySelector('#mfaCodeInput').value;
+
+      // update the config
+      homebridge.updatePluginConfig(pluginConfig);
+    });
+
+    // watch for click events on the loginButton
+    document.querySelector('#loginButton').addEventListener('click', async () => {
+      // validate a username was provided
+      const username = document.querySelector('#userNameInput').value;
+      const password = document.querySelector('#passwordInput').value;
+      const mfaCode = document.querySelector('#mfaCodeInput').value;
+
+
+
+      if (!username) {
+        // create a error / red toast notification if the required input is not provided.
+        homebridge.toast.error('A username must be provided.', 'Error');
+        return;
+      }
+      if (!password) {
+        // create a error / red toast notification if the required input is not provided.
+        homebridge.toast.error('A password must be provided.', 'Error');
+        return;
+      }
+
+      // starting the request, show the loading spinner
+      homebridge.showSpinner();
+ // request loign from the server
+      try {
+        const response = await homebridge.request('/login', {
+          username: username,
+          password: password
+        });
+
+        // update the token input with the response
+        document.querySelector('#mfaCodeInput').value = response.access_token;
+
+        // update the plugin config Change Response for SMS
+        pluginConfig[0].mfaCode = response.token;
+        homebridge.updatePluginConfig(pluginConfig);
+
+        // show a success toast notification
+        homebridge.toast.success('Login!', 'Success');
+      } catch (e) {
+        homebridge.toast.error(e.error, e.message);
+      } finally {
+        // remember to un-hide the spinner
+        homebridge.hideSpinner();
+      }
+      // request a token from the server
+      // try {
+      //   const response = await homebridge.request('/token', {
+      //     username: username,
+      //   });
+
+      //   // update the token input with the response
+      //   document.querySelector('#mfaCodeInput').value = response.token;
+
+      //   // update the plugin config Change Response for SMS
+      //   pluginConfig[0].mfaCode = response.token;
+      //   homebridge.updatePluginConfig(pluginConfig);
+
+      //   // show a success toast notification
+      //   homebridge.toast.success('Got Token!', 'Success');
+      // } catch (e) {
+      //   homebridge.toast.error(e.error, e.message);
+      // } finally {
+      //   // remember to un-hide the spinner
+      //   homebridge.hideSpinner();
+      // }
+    });
+
+  })();
+
+</script>

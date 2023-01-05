@@ -35,6 +35,8 @@
     "uuid": "8.3.2"
   },
   "devDependencies": {
+    "@homebridge/plugin-ui-utils": "0.0.18",
+    "homebridge-config-ui-x": "^4.50.2",
     "@typescript-eslint/eslint-plugin": "^5.27.1",
     "@typescript-eslint/parser": "^5.27.1",
     "eslint": "^8.17.0",
